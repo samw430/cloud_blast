@@ -20,3 +20,11 @@ sbin/stop-yarn.sh
 
 For one node dev on lab machine:
 /usr/cs-local/339/hadoop/bin/hadoop jar build.jar ClickRate ../../input/clicks_merged/clicks.log ../../input/impressions_merged/impressions.log output
+
+Setting Environment Variables:
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
+
+export JVM_ARGS="-Xms1024m -Xmx1024m"
+export HADOOP_CLIENT_OPTS="-Xmx1024m $HADOOP_CLIENT_OPTS"
+
+My java home is /usr/lib/jvm/java-8-openjdk-amd64/
