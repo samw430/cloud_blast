@@ -28,3 +28,8 @@ export JVM_ARGS="-Xms1024m -Xmx1024m"
 export HADOOP_CLIENT_OPTS="-Xmx1024m $HADOOP_CLIENT_OPTS"
 
 My java home is /usr/lib/jvm/java-8-openjdk-amd64/
+
+Can run on single node on my laptop with:
+~/hadoop-2.9.2/bin/hadoop jar ~/hadoop-2.9.2/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar grep reference_genomes/ output '\n'
+
+~/hadoop-2.9.2/bin/hadoop jar build.jar Trivial ../source/ output
