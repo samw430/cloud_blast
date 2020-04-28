@@ -14,8 +14,13 @@ remote: ${SRC}
 	${JAVA_HOME}/bin/jar cvf build.jar *.class lib
 
 local: ${SRC}
-	${JAVA_HOME}/bin/javac -Xlint -classpath ${LOCAL_NEW_CLASSPATH} Trivial.java
+	${JAVA_HOME}/bin/javac -Xlint -classpath ${LOCAL_NEW_CLASSPATH} ${SRC}
 	${JAVA_HOME}/bin/jar cvf build.jar *.class lib
 
 clean:
-	rm *~
+	rm *.class
+	rm -rf output
+	rm -rf temp_seeds
+	rm offset_dict.ser
+	rm genome_path
+	rm query_string
