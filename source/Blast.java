@@ -75,6 +75,7 @@ public static void main(String[] args) throws Exception {
 	job2.setJarByClass(Blast.class);
 	job2.setMapperClass(Blast.GlobalAlignmentMapper.class);
 	job2.setReducerClass(Blast.FormatterReducer.class);
+	job2.setMapOutputKeyClass(Text.class);
 
 	FileInputFormat.addInputPath(job2, temp_path);
 	FileOutputFormat.setOutputPath(job2, new Path(args[2]));
@@ -170,7 +171,82 @@ public static class SumReducer extends Reducer < LongWritable, Text,
  * NOTE: Keys must implement WritableComparable, values must implement Writable
  */
 public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text, 
-                                                    LongWritable, Text > {
+                                                    Text, Text > {
+    
+    public void print_2d(int[][] memo){
+    	for(int i=0; i<memo.length; i++){
+    		for(int j=0; j<memo[0].length; j++){
+    			System.out.print(memo[i][j] + ",");
+    		}
+    		System.out.println("");
+    	}
+    }
+
+    public int[][] generate_global_memo(String query, String genome){
+    	int[][] memo = new int[genome.length() + 1][query.length() + 1];
+
+    	for(int i=0; i< genome.length() + 1; i++){
+    		memo[i][0] = -2*i;
+    	}
+    	for(int j=0; j< query.length() + 1; j++){
+    		memo[0][j] = -2*j;
+    	}
+
+    	for(int i=1; i< genome.length() + 1; i++){
+    		for(int j=1; j< query.length() + 1; j++){
+    			int match = -1;
+    			if(query.charAt(j-1) == genome.charAt(i-1)){
+    				match = 1;
+				}
+				memo[i][j] = Math.max(memo[i-1][j] - 2, Math.max(memo[i][j-1] -2, memo[i-1][j-1] + match));
+    		}
+    	}
+    	return memo;
+    }
+
+    public String[] global_traceback(int[][] memo, String query, String genome){
+    	String resultQ = "";
+    	String resultG = "";
+
+    	int i = genome.length();
+    	int j = query.length();
+
+    	while(i >=0 && j >= 0){
+    		if( i == 0 && j == 0){
+    			break;
+    		}else if (i == 0){
+    			resultG = "-" + resultG;
+    			resultQ = query.charAt(j-1) + resultQ;
+    			j--;
+    		}else if (j == 0){
+    			resultQ = "-" + resultQ;
+    			resultG = genome.charAt(i-1) + resultG;
+    			i--;
+    		}else{
+    			if(memo[i][j] == memo[i-1][j] - 2){
+    				resultQ = "-" + resultQ;
+    				resultG = genome.charAt(i-1) + resultG;
+    				i--;
+    			}else if( (memo[i][j] == memo[i-1][j-1]-1 && genome.charAt(i-1) != query.charAt(j-1)) || (memo[i][j] == memo[i-1][j-1]+1 && genome.charAt(i-1) == query.charAt(j-1))){
+    				resultQ = query.charAt(j-1) + resultQ;
+    				resultG = genome.charAt(i-1) + resultG;
+    				i--;
+    				j--;
+    			}else{
+    				resultG = "-" + resultG;
+    				resultQ = query.charAt(j-1) + resultQ;
+    				j--;
+    			}
+    		}
+    	}
+
+    	String[] return_val = new String[3];
+    	return_val[0] = resultQ;
+    	return_val[1] = resultG;
+    	return_val[2] = Integer.toString(memo[genome.length()][query.length()]);
+
+    	return return_val;
+    }
 
 	@Override
 	public void map(LongWritable key, Text val, Context context)
@@ -197,7 +273,12 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 
 		    FSDataInputStream genome_input_stream = fs.open(new Path(genome_string));
 		    Long offset = new Long(val.toString().split("\t")[0]);
-		    genome_input_stream.seek(offset);
+		    System.out.println(offset);
+		    try{
+		    	genome_input_stream.seek(offset + offset/70);
+		    }catch(Exception e){
+		    	return;
+		    }
 
 		    genome_reader = new BufferedReader(new InputStreamReader(genome_input_stream)); 
 
@@ -208,10 +289,19 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 		    	genome_subset = genome_subset + line;
 		    } 
 
-		    System.out.println(genome_subset);
-			System.out.println(key + " | " + val);
-			System.out.println(offset);
-			context.write(key, val);
+		    if (genome_subset.length() > query.length()  + 10){
+		    	genome_subset = genome_subset.substring(0, query.length() + 10);
+		    }
+
+		    int[][] memo = generate_global_memo(query, genome_subset);
+		    String[] result = global_traceback(memo, query, genome_subset);
+
+
+		    if(Integer.parseInt(result[2]) > -15){
+		    	Text new_key = new Text(result[0]);
+				Text new_val = new Text(result[1] + "\t" + result[2]);
+				context.write(new_key, new_val);
+		    }
 	}
 
 }
@@ -219,11 +309,11 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 /**
  * reduce: (LongWritable, Text) --> (LongWritable, Text)
  */
-public static class FormatterReducer extends Reducer < LongWritable, Text, 
-                                                      LongWritable, Text > {
+public static class FormatterReducer extends Reducer < Text, Text, 
+                                                      Text, Text > {
 
 	@Override
-	public void reduce(LongWritable key, Iterable < Text > values, Context context) 
+	public void reduce(Text key, Iterable < Text > values, Context context) 
 		throws IOException, InterruptedException {
 		for (Text val: values){
 			context.write(key, val);
