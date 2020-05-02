@@ -122,7 +122,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         
         try { 
             FileSystem fs = FileSystem.get(context.getConfiguration()); 
-            Path offset_dict_ser_path = new Path("offset_dict.ser");
+            URI[] cache_files = context.getCacheFiles();
             System.out.println("On map node " + offset_dict_ser_path.toString());
             FileInputStream file = new FileInputStream(offset_dict_ser_path.toString());
             ObjectInputStream input = new ObjectInputStream(file);
