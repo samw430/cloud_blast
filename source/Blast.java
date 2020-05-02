@@ -74,7 +74,7 @@ public static void main(String[] args) throws Exception {
     file.close();
 
     System.out.println("Here");
-	job1.addCacheFile(new URI(offset_dict_ser_path.toString()));
+	job1.addCacheFile(new URI("hdfs://localhost:9000/offset_dict.ser#offset_dict.ser"));
 	System.out.println("What");
 
 	job1.waitForCompletion(true);
@@ -131,7 +131,8 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
             System.out.println(cache_files);
             Path offset_dict_ser_path = new Path("offset_dict.ser");
             System.out.println("On map node " + offset_dict_ser_path.toString());
-            FileInputStream file = new FileInputStream(offset_dict_ser_path.toString());
+            File offset_file = new File("offset_dict.ser");
+            FileInputStream file = new FileInputStream(offset_file);
             ObjectInputStream input = new ObjectInputStream(file);
 
             offset_dictionary = (HashMap<String, List<Integer>>) input.readObject();
@@ -143,6 +144,8 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
             System.out.println(e + " Unable to read cached Query String File"); 
             System.exit(1); 
         } 
+
+        super.setup(context);
 	}
 
 	@Override
