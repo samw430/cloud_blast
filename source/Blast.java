@@ -63,14 +63,15 @@ public static void main(String[] args) throws Exception {
     	offset_dictionary.get(key).add(i);
     }
 
-    FileOutputStream file = new FileOutputStream("/user/input/offset_dict.ser");
+    Path offset_dict_ser_path = new Path("offset_dict.ser");
+    FileOutputStream file = new FileOutputStream(offset_dict_ser_path.toString());
     ObjectOutputStream out_serial = new ObjectOutputStream(file);
 
     out_serial.writeObject(offset_dictionary);
     out_serial.close();
     file.close();
 
-	job1.addCacheFile(new URI("./offset_dict.ser"));
+	job1.addCacheFile(new URI(offset_dict_ser_path.toString()));
 
 	job1.waitForCompletion(true);
 
@@ -121,10 +122,12 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         
         try { 
             FileSystem fs = FileSystem.get(context.getConfiguration()); 
-            FileInputStream file = new FileInputStream("/user/input/offset_dict.ser");
+            Path offset_dict_ser_path = new Path("offset_dict.ser");
+            FileInputStream file = new FileInputStream(offset_dict_ser_path.toString());
             ObjectInputStream input = new ObjectInputStream(file);
 
             offset_dictionary = (HashMap<String, List<Integer>>) input.readObject();
+            System.out.println(offset_dictionary);
 
             file.close();
             input.close();
