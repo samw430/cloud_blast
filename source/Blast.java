@@ -75,6 +75,7 @@ public static void main(String[] args) throws Exception {
 
     System.out.println("Here");
 	job1.addCacheFile(new URI(offset_dict_ser_path.toString()));
+	System.out.println("What");
 
 	job1.waitForCompletion(true);
 
