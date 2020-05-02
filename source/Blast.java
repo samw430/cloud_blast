@@ -65,6 +65,7 @@ public static void main(String[] args) throws Exception {
 
     System.out.println(offset_dictionary);
     Path offset_dict_ser_path = new Path("offset_dict.ser");
+    System.out.println(offset_dict_ser_path);
     FileOutputStream file = new FileOutputStream(offset_dict_ser_path.toString());
     ObjectOutputStream out_serial = new ObjectOutputStream(file);
 
