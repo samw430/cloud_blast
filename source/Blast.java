@@ -73,6 +73,7 @@ public static void main(String[] args) throws Exception {
     out_serial.close();
     file.close();
 
+    System.out.println("Here");
 	job1.addCacheFile(new URI(offset_dict_ser_path.toString()));
 
 	job1.waitForCompletion(true);
