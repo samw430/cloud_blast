@@ -24,6 +24,8 @@ public static void main(String[] args) throws Exception {
 		System.err.println("Expected: [in query file] [in genome file] [out]");
 		System.exit(1);
 	}
+	final long start_time = System.currentTimeMillis();
+
 
 	//Define temporary file for storing data between MapReduce jobs
 	Path temp_path = new Path("temp_seeds");
@@ -31,6 +33,7 @@ public static void main(String[] args) throws Exception {
 	//Initialization of first job to search for viable seeds
 	Configuration conf1 = new Configuration();
 			 
+	//Job for finding seeds where we will run more expensive Dynamic programming string matching
 	Job job1 = Job.getInstance(conf1, "seed generation job");
 	job1.setJarByClass(Blast.class);
 
@@ -42,7 +45,7 @@ public static void main(String[] args) throws Exception {
 
 	//Generate k-mer offset dictionary and serialize into DistributedCache to be shared by Mappers
 	FileSystem fs = FileSystem.get(conf1); 
-	HashMap<String, Integer> offset_dictionary = new HashMap<String, Integer>();
+	HashMap<String, List<Integer>> offset_dictionary = new HashMap<String, List<Integer>>();
 	Path query_path = new Path(args[0]); 
     BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
 
@@ -53,8 +56,11 @@ public static void main(String[] args) throws Exception {
     } 
 
     for(int i=0; i<query.length() - 5; i++){
-    	System.out.println(query.substring(i, i+6));
-    	offset_dictionary.put(query.substring(i, i+6), i);
+    	String key = query.substring(i, i+6);
+    	if(!offset_dictionary.containsKey(key)){
+    		offset_dictionary.put(key, new ArrayList<Integer>());
+    	}
+    	offset_dictionary.get(key).add(i);
     }
 
     FileOutputStream file = new FileOutputStream("./offset_dict.ser");
@@ -68,7 +74,9 @@ public static void main(String[] args) throws Exception {
 
 	job1.waitForCompletion(true);
 
+	final long mid_time = System.currentTimeMillis();
 
+	//Job runs Needleman-Wunsch dynamic programming algorithm on zones with high seed values
 	Configuration conf2 = new Configuration();
 	Job job2 = Job.getInstance(conf2, "seed alignment job");
 	
@@ -91,7 +99,10 @@ public static void main(String[] args) throws Exception {
 
 	job2.waitForCompletion(true);
 
-	System.exit(job2.waitForCompletion(true) ? 0 : 1);
+	final long end_time = System.currentTimeMillis();
+	System.out.println("First Job runtime: " + (mid_time - start_time));
+	System.out.println("Second Job runtime: " + (end_time - mid_time));
+	System.out.println("Total runtime: " + (end_time - start_time));
 }
 
 /**
@@ -102,8 +113,9 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
                                                     LongWritable, Text > {
 
 	
-    HashMap<String, Integer> offset_dictionary = null;
+    HashMap<String, List<Integer>> offset_dictionary = null;
 
+    //Method runs once for each Mapper node allowing us to just read in serialized hash table once
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
         
@@ -112,13 +124,11 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
             FileInputStream file = new FileInputStream("./offset_dict.ser");
             ObjectInputStream input = new ObjectInputStream(file);
 
-            offset_dictionary = (HashMap<String, Integer>) input.readObject();
+            offset_dictionary = (HashMap<String, List<Integer>>) input.readObject();
 
             file.close();
             input.close();
-        } 
-
-        catch (Exception e){ 
+        }catch (Exception e){ 
             System.out.println(e + " Unable to read cached Query String File"); 
             System.exit(1); 
         } 
@@ -131,15 +141,16 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 		for (int i =0; i< line.length()-5; i++){
 			String current_substring = line.substring(i, i+6);
 			if(offset_dictionary.containsKey(current_substring)){
-				Long query_offset = new Long(offset_dictionary.get(current_substring));
-				Long document_offset = key.get();
-				Long true_offset = document_offset + i - query_offset;
-				true_offset = true_offset - true_offset%20;
-				context.write(new LongWritable(true_offset), new Text("1"));
+				for( Integer saved_offset : offset_dictionary.get(current_substring)){
+					Long query_offset = new Long(saved_offset);
+					Long document_offset = key.get();
+					Long true_offset = document_offset + i - query_offset;
+					true_offset = true_offset - true_offset%20;
+					context.write(new LongWritable(true_offset), new Text("1"));
+				}
 			}
 		}
 	}
-
 }
 
 /**
@@ -167,12 +178,12 @@ public static class SumReducer extends Reducer < LongWritable, Text,
 }
 
 /**
- * map: (LongWritable, Text) --> (LongWritable, Text)
- * NOTE: Keys must implement WritableComparable, values must implement Writable
+ * Mapper functions that takes offset zone with reasonable density and runs Needleman-Wunsh
+ * map: (LongWritable, Text) --> (Text, Text)
  */
 public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text, 
                                                     Text, Text > {
-    
+    //Method for testing behavior of generate_global_memo
     public void print_2d(int[][] memo){
     	for(int i=0; i<memo.length; i++){
     		for(int j=0; j<memo[0].length; j++){
@@ -182,6 +193,8 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
     	}
     }
 
+    //Method for generating dynamic programming memo of alignment score
+    //Employs gap penalty of -2 for gap and matching score of 1 for match and -1 for mismatch
     public int[][] generate_global_memo(String query, String genome){
     	int[][] memo = new int[genome.length() + 1][query.length() + 1];
 
@@ -204,6 +217,7 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
     	return memo;
     }
 
+    //Performs traceback through memo to determine globally optimal alignment
     public String[] global_traceback(int[][] memo, String query, String genome){
     	String resultQ = "";
     	String resultG = "";
@@ -240,6 +254,7 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
     		}
     	}
 
+    	//Put strings into a list so we can return three different values here
     	String[] return_val = new String[3];
     	return_val[0] = resultQ;
     	return_val[1] = resultG;
@@ -262,6 +277,7 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 		    	query = query + line;
 		    } 
 
+		    //Get path to genome in file system
 		    Path genome_path = new Path("./genome_path");
 		    BufferedReader genome_reader = new BufferedReader(new InputStreamReader(fs.open(genome_path))); 
 
@@ -271,9 +287,9 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 		    	genome_string = genome_string + line;
 		    } 
 
+		    //Find position in genome using FSDataInputStream because of its random access property through seek
 		    FSDataInputStream genome_input_stream = fs.open(new Path(genome_string));
 		    Long offset = new Long(val.toString().split("\t")[0]);
-		    System.out.println(offset);
 		    try{
 		    	genome_input_stream.seek(offset + offset/70);
 		    }catch(Exception e){
@@ -282,24 +298,24 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 
 		    genome_reader = new BufferedReader(new InputStreamReader(genome_input_stream)); 
 
-			String genome_subset = "";	
+			String genome_substring = "";	
 			line = "";			
-		    while (genome_subset.length() < query.length() && (line = genome_reader.readLine()) != null){ 
+		    while (genome_substring.length() < query.length() && (line = genome_reader.readLine()) != null){ 
 		    	line = line.replace("\n", "");
-		    	genome_subset = genome_subset + line;
+		    	genome_substring = genome_substring + line;
 		    } 
 
-		    if (genome_subset.length() > query.length()  + 10){
-		    	genome_subset = genome_subset.substring(0, query.length() + 10);
+		    if (genome_substring.length() > query.length()  + 10){
+		    	genome_substring = genome_substring.substring(0, query.length() + 10);
 		    }
 
-		    int[][] memo = generate_global_memo(query, genome_subset);
-		    String[] result = global_traceback(memo, query, genome_subset);
+		    int[][] memo = generate_global_memo(query, genome_substring);
+		    String[] result = global_traceback(memo, query, genome_substring);
 
 
 		    if(Integer.parseInt(result[2]) > -15){
-		    	Text new_key = new Text(result[0]);
-				Text new_val = new Text(result[1] + "\t" + result[2]);
+		    	Text new_key = new Text("Aligned Query:\n" + result[0]);
+				Text new_val = new Text("\nAligned Substring of Genome:\n" + result[1] + "\n\nAlignment Score: " + result[2]);
 				context.write(new_key, new_val);
 		    }
 	}

@@ -36,17 +36,14 @@ Can run on single node on my laptop with:
 
 For now assume that we take the top line off the fasta file
 
-TODO:
 
-Read in input genome, search query, and output file
-Generate k-mer lookup table from search query
-
-Job 1:
-Map each line of input and emit intermediates of offset of kmer -1 if it isn't in the dictionary
-Reduction: If there are enough k-mers around this offset then run smith waterman with query string and offset substring. Emit lined up substrings if score is around some offset
-
-Where I'm At: 
-Offsets are calculated correctly I think
-But when I get substring from file I think I'm not including the character skips for new lines so need to fix that
-Then I need to implement some sort of alignment and get a score
-Then I can output the result if it works and write a nice formatter in the FormatterReducer 
+10 83740 Time: 99204
+20 167479 Time: 172269
+30 251219 Time: 
+40 334959
+50 418699
+60 502438
+70 586178
+80 669918
+90 753657
+100: 837397
