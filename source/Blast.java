@@ -63,7 +63,7 @@ public static void main(String[] args) throws Exception {
     	offset_dictionary.get(key).add(i);
     }
 
-    FileOutputStream file = new FileOutputStream("./offset_dict.ser");
+    FileOutputStream file = new FileOutputStream("/user/input/offset_dict.ser");
     ObjectOutputStream out_serial = new ObjectOutputStream(file);
 
     out_serial.writeObject(offset_dictionary);
@@ -121,7 +121,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         
         try { 
             FileSystem fs = FileSystem.get(context.getConfiguration()); 
-            FileInputStream file = new FileInputStream("./offset_dict.ser");
+            FileInputStream file = new FileInputStream("/user/input/offset_dict.ser");
             ObjectInputStream input = new ObjectInputStream(file);
 
             offset_dictionary = (HashMap<String, List<Integer>>) input.readObject();
