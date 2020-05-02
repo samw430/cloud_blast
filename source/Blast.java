@@ -26,7 +26,7 @@ public static void main(String[] args) throws Exception {
 	}
 	final long start_time = System.currentTimeMillis();
 
-
+	System.out.println("I'm starting");
 	//Define temporary file for storing data between MapReduce jobs
 	Path temp_path = new Path("temp_seeds");
 
@@ -63,6 +63,7 @@ public static void main(String[] args) throws Exception {
     	offset_dictionary.get(key).add(i);
     }
 
+    System.out.println(offset_dictionary);
     Path offset_dict_ser_path = new Path("offset_dict.ser");
     FileOutputStream file = new FileOutputStream(offset_dict_ser_path.toString());
     ObjectOutputStream out_serial = new ObjectOutputStream(file);
