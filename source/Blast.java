@@ -125,6 +125,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	protected void setup(Context context) throws IOException, InterruptedException {
         
         try { 
+        	System.out.println("I'm setting up");
             FileSystem fs = FileSystem.get(context.getConfiguration()); 
             URI[] cache_files = context.getCacheFiles();
             System.out.println(cache_files);
