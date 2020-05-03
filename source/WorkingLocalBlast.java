@@ -16,7 +16,7 @@ import java.util.*;
 /**
  * BLAST implemented as Map Reduce job that takes query string and searchable genome and returns similar substrings
  */
-public class Blast {
+public class WorkingLocalBlast {
 
 public static void main(String[] args) throws Exception {
 	if (args.length < 3) {

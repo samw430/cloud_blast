@@ -43,40 +43,6 @@ public static void main(String[] args) throws Exception {
 	FileInputFormat.addInputPath(job1, new Path(args[1]));
 	FileOutputFormat.setOutputPath(job1, temp_path);
 
-	//Generate k-mer offset dictionary and serialize into DistributedCache to be shared by Mappers
-	FileSystem fs = FileSystem.get(conf1); 
-	HashMap<String, List<Integer>> offset_dictionary = new HashMap<String, List<Integer>>();
-	Path query_path = new Path(args[0]); 
-    BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
-
-	String query = "";	
-	String line = "";			
-    while ((line = reader.readLine()) != null){ 
-    	query = query + line;
-    } 
-
-    for(int i=0; i<query.length() - 5; i++){
-    	String key = query.substring(i, i+6);
-    	if(!offset_dictionary.containsKey(key)){
-    		offset_dictionary.put(key, new ArrayList<Integer>());
-    	}
-    	offset_dictionary.get(key).add(i);
-    }
-
-    System.out.println(offset_dictionary);
-    Path offset_dict_ser_path = new Path("offset_dict.ser");
-    System.out.println(offset_dict_ser_path);
-    FileOutputStream file = new FileOutputStream(offset_dict_ser_path.toString());
-    ObjectOutputStream out_serial = new ObjectOutputStream(file);
-
-    out_serial.writeObject(offset_dictionary);
-    out_serial.close();
-    file.close();
-
-    System.out.println("Here");
-	job1.addCacheFile(new URI("offset_dict.ser"));
-	System.out.println("What");
-
 	job1.waitForCompletion(true);
 
 	final long mid_time = System.currentTimeMillis();
@@ -92,7 +58,7 @@ public static void main(String[] args) throws Exception {
 
 	FileInputFormat.addInputPath(job2, temp_path);
 	FileOutputFormat.setOutputPath(job2, new Path(args[2]));
-	job2.addCacheFile(new URI(query_path + "#query_string"));
+	//job2.addCacheFile(new URI(query_path + "#query_string"));
 
 	//Add genome_path to DistributedCache
 	FileOutputStream output_file = new FileOutputStream("./genome_path");
@@ -126,19 +92,23 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         
         try { 
         	System.out.println("I'm setting up");
-            FileSystem fs = FileSystem.get(context.getConfiguration()); 
-            URI[] cache_files = context.getCacheFiles();
-            System.out.println(cache_files);
-            Path offset_dict_ser_path = new Path("offset_dict.ser");
-            System.out.println("On map node " + offset_dict_ser_path.toString());
-            FileInputStream file = new FileInputStream(offset_dict_ser_path.toString());
-            ObjectInputStream input = new ObjectInputStream(file);
 
-            offset_dictionary = (HashMap<String, List<Integer>>) input.readObject();
-            System.out.println(offset_dictionary);
+        	FileSystem fs = FileSystem.get(context.getConfiguration()); 
+        	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(new Path("query")))); 
+			String query = "";	
+			String line = "";			
+		    while ((line = reader.readLine()) != null){ 
+		    	query = query + line;
+		    } 
 
-            file.close();
-            input.close();
+		    for(int i=0; i<query.length() - 5; i++){
+		    	String key = query.substring(i, i+6);
+		    	if(!offset_dictionary.containsKey(key)){
+		    		offset_dictionary.put(key, new ArrayList<Integer>());
+		    	}
+		    	offset_dictionary.get(key).add(i);
+		    }
+    
         }catch (Exception e){ 
             System.out.println(e + " Unable to read cached Query String File"); 
             System.exit(1); 
