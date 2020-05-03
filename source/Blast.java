@@ -124,6 +124,8 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	    } 
 	    System.out.println(query);
 
+	    offset_dictionary = new HashMap<String, List<Integer>>();
+
     	for(int i=0; i<query.length() - 5; i++){
 	    	String kmer = query.substring(i, i+6);
 	    	if(!offset_dictionary.containsKey(kmer)){
