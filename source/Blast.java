@@ -94,6 +94,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         	System.out.println("I'm setting up");
 
         	FileSystem fs = FileSystem.get(context.getConfiguration()); 
+        	System.out.println(new Path("query"));
         	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(new Path("query")))); 
 			String query = "";	
 			String line = "";			
