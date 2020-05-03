@@ -93,7 +93,29 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         try { 
         	//System.out.println("I'm setting up");
 
+   
+	    	FileSystem fs = FileSystem.get(context.getConfiguration()); 
+	    	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
+	    	
+	    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
+			System.out.println("Successfully opened file");
+	    	
+			String query = "";	
+			String file_line = "";			
+		    while ((file_line = reader.readLine()) != null){ 
+		    	query = query + file_line;
+		    } 
+		    System.out.println(query);
 
+		    offset_dictionary = new HashMap<String, List<Integer>>();
+
+	    	for(int i=0; i<query.length() - 5; i++){
+		    	String kmer = query.substring(i, i+6);
+		    	if(!offset_dictionary.containsKey(kmer)){
+		    		offset_dictionary.put(kmer, new ArrayList<Integer>());
+		    	}
+		    	offset_dictionary.get(kmer).add(i);
+		    }
 
 		    /*
 
@@ -110,29 +132,6 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	@Override
 	public void map(LongWritable key, Text val, Context context)
 		throws IOException, InterruptedException {
-   
-    	FileSystem fs = FileSystem.get(context.getConfiguration()); 
-    	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
-    	
-    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
-		System.out.println("Successfully opened file");
-    	
-		String query = "";	
-		String file_line = "";			
-	    while ((file_line = reader.readLine()) != null){ 
-	    	query = query + file_line;
-	    } 
-	    System.out.println(query);
-
-	    offset_dictionary = new HashMap<String, List<Integer>>();
-
-    	for(int i=0; i<query.length() - 5; i++){
-	    	String kmer = query.substring(i, i+6);
-	    	if(!offset_dictionary.containsKey(kmer)){
-	    		offset_dictionary.put(kmer, new ArrayList<Integer>());
-	    	}
-	    	offset_dictionary.get(kmer).add(i);
-	    }
 
 		String line = val.toString();
 		for (int i =0; i< line.length()-5; i++){
