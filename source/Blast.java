@@ -156,6 +156,7 @@ public static class SumReducer extends Reducer < LongWritable, Text,
 		if( total > cutoff_score){
 			context.write(key, new Text(String.valueOf(total)));
 		}
+		System.out.println(key + String.valueOf(total));
 	}
 
 }
