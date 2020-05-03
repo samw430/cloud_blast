@@ -68,7 +68,7 @@ public static void main(String[] args) throws Exception {
     print_stream.close();
 	job2.addCacheFile(new URI("./genome_path"));
 
-	job2.waitForCompletion(true);
+	//job2.waitForCompletion(true);
 
 	final long end_time = System.currentTimeMillis();
 	System.out.println("First Job runtime: " + (mid_time - start_time));
