@@ -96,13 +96,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 
 
 		    /*
-		    for(int i=0; i<query.length() - 5; i++){
-		    	String key = query.substring(i, i+6);
-		    	if(!offset_dictionary.containsKey(key)){
-		    		offset_dictionary.put(key, new ArrayList<Integer>());
-		    	}
-		    	offset_dictionary.get(key).add(i);
-		    }
+
 		    */
     
         }catch (Exception e){ 
@@ -129,6 +123,14 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	    	query = query + file_line;
 	    } 
 	    System.out.println(query);
+
+    	for(int i=0; i<query.length() - 5; i++){
+	    	String kmer = query.substring(i, i+6);
+	    	if(!offset_dictionary.containsKey(kmer)){
+	    		offset_dictionary.put(kmer, new ArrayList<Integer>());
+	    	}
+	    	offset_dictionary.get(kmer).add(i);
+	    }
 
 		String line = val.toString();
 		for (int i =0; i< line.length()-5; i++){
