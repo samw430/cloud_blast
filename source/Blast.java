@@ -94,6 +94,24 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         	//System.out.println("I'm setting up");
 
    
+
+
+		    /*
+
+		    */
+    
+        }catch (Exception e){ 
+            System.out.println(e + " Unable to read cached Query String File"); 
+            System.exit(1); 
+        } 
+
+        super.setup(context);
+	}
+
+	@Override
+	public void map(LongWritable key, Text val, Context context)
+		throws IOException, InterruptedException {
+
 	    	FileSystem fs = FileSystem.get(context.getConfiguration()); 
 	    	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
 	    	
@@ -116,22 +134,6 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 		    	}
 		    	offset_dictionary.get(kmer).add(i);
 		    }
-
-		    /*
-
-		    */
-    
-        }catch (Exception e){ 
-            System.out.println(e + " Unable to read cached Query String File"); 
-            System.exit(1); 
-        } 
-
-        super.setup(context);
-	}
-
-	@Override
-	public void map(LongWritable key, Text val, Context context)
-		throws IOException, InterruptedException {
 
 		String line = val.toString();
 		for (int i =0; i< line.length()-5; i++){
