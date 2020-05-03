@@ -124,9 +124,9 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 		System.out.println("Successfully opened file");
     	
 		String query = "";	
-		String line = "";			
-	    while ((line = reader.readLine()) != null){ 
-	    	query = query + line;
+		String file_line = "";			
+	    while ((file_line = reader.readLine()) != null){ 
+	    	query = query + file_line;
 	    } 
 	    System.out.println(query);
 
