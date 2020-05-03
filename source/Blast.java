@@ -91,10 +91,11 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	protected void setup(Context context) throws IOException, InterruptedException {
         
         try { 
-        	System.out.println("I'm setting up");
+        	//System.out.println("I'm setting up");
 
         	FileSystem fs = FileSystem.get(context.getConfiguration()); 
         	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
+        	/*
         	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
 			String query = "";	
 			String line = "";			
@@ -109,6 +110,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 		    	}
 		    	offset_dictionary.get(key).add(i);
 		    }
+		    */
     
         }catch (Exception e){ 
             System.out.println(e + " Unable to read cached Query String File"); 
