@@ -93,18 +93,9 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
         try { 
         	//System.out.println("I'm setting up");
 
-        	FileSystem fs = FileSystem.get(context.getConfiguration()); 
-        	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
-        	
-        	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
-			System.out.println("Successfully opened file");
-        	/*
-			String query = "";	
-			String line = "";			
-		    while ((line = reader.readLine()) != null){ 
-		    	query = query + line;
-		    } 
 
+
+		    /*
 		    for(int i=0; i<query.length() - 5; i++){
 		    	String key = query.substring(i, i+6);
 		    	if(!offset_dictionary.containsKey(key)){
@@ -125,6 +116,20 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	@Override
 	public void map(LongWritable key, Text val, Context context)
 		throws IOException, InterruptedException {
+   
+    	FileSystem fs = FileSystem.get(context.getConfiguration()); 
+    	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
+    	
+    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
+		System.out.println("Successfully opened file");
+    	
+		String query = "";	
+		String line = "";			
+	    while ((line = reader.readLine()) != null){ 
+	    	query = query + line;
+	    } 
+	    System.out.println(query);
+
 		String line = val.toString();
 		for (int i =0; i< line.length()-5; i++){
 			String current_substring = line.substring(i, i+6);
