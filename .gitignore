@@ -21,3 +21,10 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+/reference_genomes/*.fasta
+/source/genome_path
+/source/output
+/source/temp_seeds
+/source/query_string
+/source/offset_dict.ser
