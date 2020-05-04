@@ -34,6 +34,7 @@ public static void main(String[] args) throws Exception {
 	Configuration conf1 = new Configuration();
 			 
 	//Job for finding seeds where we will run more expensive Dynamic programming string matching
+	conf1.set("QueryPath", args[1]);
 	Job job1 = Job.getInstance(conf1, "seed generation job");
 	job1.setJarByClass(Blast.class);
 
@@ -42,7 +43,6 @@ public static void main(String[] args) throws Exception {
 
 	FileInputFormat.addInputPath(job1, new Path(args[1]));
 	FileOutputFormat.setOutputPath(job1, temp_path);
-	conf1.set("QueryPath", args[1]);
 
 	job1.waitForCompletion(true);
 
