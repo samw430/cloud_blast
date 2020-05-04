@@ -100,7 +100,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 		throws IOException, InterruptedException {
 
 	    	FileSystem fs = FileSystem.get(context.getConfiguration()); 
-	    	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
+	    	Path query_path = new Path(query_path_string);
 	    	
 	    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
 			System.out.println("Successfully opened file");
