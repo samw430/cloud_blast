@@ -93,6 +93,7 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	protected void setup(Context context) throws IOException, InterruptedException {
         super.setup(context);
         query_path_string = context.getConfiguration().get("QueryPath");
+        System.out.println("Ran setup");
 	}
 
 	@Override
