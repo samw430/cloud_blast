@@ -281,7 +281,7 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 
 		    //Find position in genome using FSDataInputStream because of its random access property through seek
 		    Path genome_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/genome");
-		    FSDataInputStream genome_input_stream = fs.open(new Path(genome_path));
+		    FSDataInputStream genome_input_stream = fs.open(genome_path);
 		    Long offset = new Long(val.toString().split("\t")[0]);
 		    try{
 		    	genome_input_stream.seek(offset + offset/70);
@@ -289,10 +289,10 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 		    	return;
 		    }
 
-		    genome_reader = new BufferedReader(new InputStreamReader(genome_input_stream)); 
+		    BufferedReader genome_reader = new BufferedReader(new InputStreamReader(genome_input_stream)); 
 
 			String genome_substring = "";	
-			line = "";			
+			String line = "";			
 		    while (genome_substring.length() < query.length() && (line = genome_reader.readLine()) != null){ 
 		    	line = line.replace("\n", "");
 		    	genome_substring = genome_substring + line;
