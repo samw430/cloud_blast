@@ -267,27 +267,21 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
 		throws IOException, InterruptedException {
 			//Get Query string
             FileSystem fs = FileSystem.get(context.getConfiguration()); 
-            Path query_string_path = new Path("./query_string");
-		    BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_string_path))); 
-
+	    	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
+	    	
+	    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
+			System.out.println("Successfully opened file");
+	    	
 			String query = "";	
-			String line = "";			
-		    while ((line = reader.readLine()) != null){ 
-		    	query = query + line;
+			String file_line = "";			
+		    while ((file_line = reader.readLine()) != null){ 
+		    	query = query + file_line;
 		    } 
-
-		    //Get path to genome in file system
-		    Path genome_path = new Path("./genome_path");
-		    BufferedReader genome_reader = new BufferedReader(new InputStreamReader(fs.open(genome_path))); 
-
-			String genome_string = "";	
-			line = "";			
-		    while ((line = genome_reader.readLine()) != null){ 
-		    	genome_string = genome_string + line;
-		    } 
+		    System.out.println(query);
 
 		    //Find position in genome using FSDataInputStream because of its random access property through seek
-		    FSDataInputStream genome_input_stream = fs.open(new Path(genome_string));
+		    Path genome_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/genome");
+		    FSDataInputStream genome_input_stream = fs.open(new Path(genome_path));
 		    Long offset = new Long(val.toString().split("\t")[0]);
 		    try{
 		    	genome_input_stream.seek(offset + offset/70);
