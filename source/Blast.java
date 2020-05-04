@@ -42,6 +42,7 @@ public static void main(String[] args) throws Exception {
 
 	FileInputFormat.addInputPath(job1, new Path(args[1]));
 	FileOutputFormat.setOutputPath(job1, temp_path);
+	conf1.set("QueryPath", args[1]);
 
 	job1.waitForCompletion(true);
 
@@ -85,27 +86,13 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 
 	
     HashMap<String, List<Integer>> offset_dictionary = null;
+    String query_path_string = null;
 
     //Method runs once for each Mapper node allowing us to just read in serialized hash table once
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-        
-        try { 
-        	//System.out.println("I'm setting up");
-
-   
-
-
-		    /*
-
-		    */
-    
-        }catch (Exception e){ 
-            System.out.println(e + " Unable to read cached Query String File"); 
-            System.exit(1); 
-        } 
-
         super.setup(context);
+        query_path_string = context.getConfiguration().get("QueryPath");
 	}
 
 	@Override
