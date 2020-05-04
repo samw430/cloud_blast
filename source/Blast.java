@@ -26,15 +26,15 @@ public static void main(String[] args) throws Exception {
 	}
 	final long start_time = System.currentTimeMillis();
 
-	System.out.println("I'm starting");
 	//Define temporary file for storing data between MapReduce jobs
 	Path temp_path = new Path("temp_seeds");
 
 	//Initialization of first job to search for viable seeds
 	Configuration conf1 = new Configuration();
-			 
+
+	System.out.println(args);
 	//Job for finding seeds where we will run more expensive Dynamic programming string matching
-	conf1.set("QueryPath", args[1]);
+	conf1.set("QueryPath", args[0]);
 	Job job1 = Job.getInstance(conf1, "seed generation job");
 	job1.setJarByClass(Blast.class);
 
@@ -50,8 +50,10 @@ public static void main(String[] args) throws Exception {
 
 	//Job runs Needleman-Wunsch dynamic programming algorithm on zones with high seed values
 	Configuration conf2 = new Configuration();
-	Job job2 = Job.getInstance(conf2, "seed alignment job");
 	
+	conf2.set("QueryPath", args[0]);
+	conf2.set("GenomePath", args[1]);
+	Job job2 = Job.getInstance(conf2, "seed alignment job");
 	job2.setJarByClass(Blast.class);
 	job2.setMapperClass(Blast.GlobalAlignmentMapper.class);
 	job2.setReducerClass(Blast.FormatterReducer.class);
@@ -59,17 +61,8 @@ public static void main(String[] args) throws Exception {
 
 	FileInputFormat.addInputPath(job2, temp_path);
 	FileOutputFormat.setOutputPath(job2, new Path(args[2]));
-	//job2.addCacheFile(new URI(query_path + "#query_string"));
 
-	//Add genome_path to DistributedCache
-	FileOutputStream output_file = new FileOutputStream("./genome_path");
-    PrintStream print_stream = new PrintStream(output_file);
-    print_stream.print(args[1]);
-    output_file.close();
-    print_stream.close();
-	job2.addCacheFile(new URI("./genome_path"));
-
-	//job2.waitForCompletion(true);
+	job2.waitForCompletion(true);
 
 	final long end_time = System.currentTimeMillis();
 	System.out.println("First Job runtime: " + (mid_time - start_time));
@@ -93,36 +86,32 @@ public static class OffSetMapper extends Mapper < LongWritable, Text,
 	protected void setup(Context context) throws IOException, InterruptedException {
         super.setup(context);
         query_path_string = context.getConfiguration().get("QueryPath");
-        System.out.println("Ran setup " + query_path_string);
+
+    	FileSystem fs = FileSystem.get(context.getConfiguration()); 
+    	Path query_path = new Path(query_path_string);
+    	
+    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
+    	
+		String query = "";	
+		String file_line = "";			
+	    while ((file_line = reader.readLine()) != null){ 
+	    	query = query + file_line;
+	    } 
+
+	    offset_dictionary = new HashMap<String, List<Integer>>();
+
+    	for(int i=0; i<query.length() - 5; i++){
+	    	String kmer = query.substring(i, i+6);
+	    	if(!offset_dictionary.containsKey(kmer)){
+	    		offset_dictionary.put(kmer, new ArrayList<Integer>());
+	    	}
+	    	offset_dictionary.get(kmer).add(i);
+	    }
 	}
 
 	@Override
 	public void map(LongWritable key, Text val, Context context)
 		throws IOException, InterruptedException {
-
-	    	FileSystem fs = FileSystem.get(context.getConfiguration()); 
-	    	Path query_path = new Path(query_path_string);
-	    	
-	    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
-			System.out.println("Successfully opened file");
-	    	
-			String query = "";	
-			String file_line = "";			
-		    while ((file_line = reader.readLine()) != null){ 
-		    	query = query + file_line;
-		    } 
-		    System.out.println(query);
-
-		    offset_dictionary = new HashMap<String, List<Integer>>();
-
-	    	for(int i=0; i<query.length() - 5; i++){
-		    	String kmer = query.substring(i, i+6);
-		    	if(!offset_dictionary.containsKey(kmer)){
-		    		offset_dictionary.put(kmer, new ArrayList<Integer>());
-		    	}
-		    	offset_dictionary.get(kmer).add(i);
-		    }
-
 		String line = val.toString();
 		for (int i =0; i< line.length()-5; i++){
 			String current_substring = line.substring(i, i+6);
@@ -159,7 +148,6 @@ public static class SumReducer extends Reducer < LongWritable, Text,
 		if( total > cutoff_score){
 			context.write(key, new Text(String.valueOf(total)));
 		}
-		System.out.println(key + String.valueOf(total));
 	}
 
 }
@@ -170,6 +158,10 @@ public static class SumReducer extends Reducer < LongWritable, Text,
  */
 public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text, 
                                                     Text, Text > {
+    String query_path_string = null;
+    String genome_path_string = null;
+    String query = null;
+
     //Method for testing behavior of generate_global_memo
     public void print_2d(int[][] memo){
     	for(int i=0; i<memo.length; i++){
@@ -250,25 +242,31 @@ public static class GlobalAlignmentMapper extends Mapper < LongWritable, Text,
     	return return_val;
     }
 
+    @Override
+	protected void setup(Context context) throws IOException, InterruptedException {
+        super.setup(context);
+        query_path_string = context.getConfiguration().get("QueryPath");
+    	genome_path_string = context.getConfiguration().get("GenomePath");
+
+		//Get Query string
+        FileSystem fs = FileSystem.get(context.getConfiguration()); 
+    	Path query_path = new Path(query_path_string);
+    	
+    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
+    	
+		String file_line = "";			
+	    while ((file_line = reader.readLine()) != null){ 
+	    	query = query + file_line;
+	    }
+    }
+
 	@Override
 	public void map(LongWritable key, Text val, Context context)
 		throws IOException, InterruptedException {
-			//Get Query string
-            FileSystem fs = FileSystem.get(context.getConfiguration()); 
-	    	Path query_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/query");
-	    	
-	    	BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(query_path))); 
-			System.out.println("Successfully opened file");
-	    	
-			String query = "";	
-			String file_line = "";			
-		    while ((file_line = reader.readLine()) != null){ 
-		    	query = query + file_line;
-		    } 
-		    System.out.println(query);
 
 		    //Find position in genome using FSDataInputStream because of its random access property through seek
-		    Path genome_path = new Path("hdfs://172.31.57.12:9000/user/ubuntu/genome");
+		    FileSystem fs = FileSystem.get(context.getConfiguration()); 
+		    Path genome_path = new Path(genome_path_string);
 		    FSDataInputStream genome_input_stream = fs.open(genome_path);
 		    Long offset = new Long(val.toString().split("\t")[0]);
 		    try{

@@ -35,10 +35,10 @@ public static void main(String[] args) throws Exception {
 			 
 	//Job for finding seeds where we will run more expensive Dynamic programming string matching
 	Job job1 = Job.getInstance(conf1, "seed generation job");
-	job1.setJarByClass(Blast.class);
+	job1.setJarByClass(WorkingLocalBlast.class);
 
-	job1.setMapperClass(Blast.OffSetMapper.class);
-	job1.setReducerClass(Blast.SumReducer.class);
+	job1.setMapperClass(WorkingLocalBlast.OffSetMapper.class);
+	job1.setReducerClass(WorkingLocalBlast.SumReducer.class);
 
 	FileInputFormat.addInputPath(job1, new Path(args[1]));
 	FileOutputFormat.setOutputPath(job1, temp_path);
@@ -73,9 +73,7 @@ public static void main(String[] args) throws Exception {
     out_serial.close();
     file.close();
 
-    System.out.println("Here");
 	job1.addCacheFile(new URI("offset_dict.ser"));
-	System.out.println("What");
 
 	job1.waitForCompletion(true);
 
@@ -85,9 +83,9 @@ public static void main(String[] args) throws Exception {
 	Configuration conf2 = new Configuration();
 	Job job2 = Job.getInstance(conf2, "seed alignment job");
 	
-	job2.setJarByClass(Blast.class);
-	job2.setMapperClass(Blast.GlobalAlignmentMapper.class);
-	job2.setReducerClass(Blast.FormatterReducer.class);
+	job2.setJarByClass(WorkingLocalBlast.class);
+	job2.setMapperClass(WorkingLocalBlast.GlobalAlignmentMapper.class);
+	job2.setReducerClass(WorkingLocalBlast.FormatterReducer.class);
 	job2.setMapOutputKeyClass(Text.class);
 
 	FileInputFormat.addInputPath(job2, temp_path);
