@@ -32,7 +32,6 @@ public static void main(String[] args) throws Exception {
 	//Initialization of first job to search for viable seeds
 	Configuration conf1 = new Configuration();
 
-	System.out.println(args);
 	//Job for finding seeds where we will run more expensive Dynamic programming string matching
 	conf1.set("QueryPath", args[0]);
 	Job job1 = Job.getInstance(conf1, "seed generation job");
@@ -144,7 +143,7 @@ public static class SumReducer extends Reducer < LongWritable, Text,
 			total++;
 		}
 
-		int cutoff_score = 1;
+		int cutoff_score = 10;
 		if( total > cutoff_score){
 			context.write(key, new Text(String.valueOf(total)));
 		}
